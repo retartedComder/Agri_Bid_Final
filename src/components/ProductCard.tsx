@@ -12,7 +12,7 @@ interface ProductCardProps {
 
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const navigate = useNavigate();
-  const { setSelectedProduct } = useProducts();
+  const { setSelectedProduct, currency } = useProducts();
   
   const handleClick = () => {
     setSelectedProduct(product);
@@ -57,7 +57,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         
         <div className="flex justify-between items-center text-sm">
           <p className="font-semibold">
-            ${product.currentPrice.toFixed(2)}
+            {currency}{product.currentPrice.toFixed(2)}
             <span className="text-xs text-muted-foreground"> /unit</span>
           </p>
           <p className="text-muted-foreground">

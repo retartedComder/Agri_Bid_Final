@@ -4,7 +4,7 @@ import { useProducts } from '@/context/ProductContext';
 import ProductCard from '@/components/ProductCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Leaf, Search, Wheat } from 'lucide-react';
+import { Leaf, Search, Wheat, Sprout, Coffee, Droplet } from 'lucide-react';
 
 const Index: React.FC = () => {
   const { products } = useProducts();
@@ -16,13 +16,13 @@ const Index: React.FC = () => {
         <div className="container mx-auto max-w-5xl">
           <div className="text-center space-y-6">
             <div className="inline-block bg-primary/10 text-primary px-4 py-1 rounded-full text-sm font-medium mb-2">
-              Direct from farms to your table
+              From Indian Farms to Your Home
             </div>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold leading-tight">
-              The Marketplace for <span className="text-gradient">Agricultural Products</span>
+              India's Premier <span className="text-gradient">Agricultural Marketplace</span>
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Discover and bid on the freshest produce directly from farmers. 
+              Discover and bid on premium agricultural products directly from farmers across India. 
               Support sustainable agriculture and get quality products at fair prices.
             </p>
             
@@ -46,7 +46,7 @@ const Index: React.FC = () => {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search products, categories, or farms..."
+                  placeholder="Search for spices, grains, fruits..."
                   className="pl-9"
                 />
               </div>
@@ -68,13 +68,18 @@ const Index: React.FC = () => {
         </div>
         
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {['Fruits', 'Vegetables', 'Dairy', 'Seafood'].map((category, index) => (
+          {[
+            { name: 'Spices', icon: <Sprout className="h-6 w-6 text-primary" /> },
+            { name: 'Grains', icon: <Wheat className="h-6 w-6 text-primary" /> },
+            { name: 'Tea', icon: <Coffee className="h-6 w-6 text-primary" /> },
+            { name: 'Oils', icon: <Droplet className="h-6 w-6 text-primary" /> }
+          ].map((category, index) => (
             <div key={index} className="bg-secondary/50 hover:bg-secondary transition-colors rounded-lg p-6 text-center cursor-pointer">
               <div className="h-12 w-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
-                <Wheat className="h-6 w-6 text-primary" />
+                {category.icon}
               </div>
-              <h3 className="font-medium">{category}</h3>
-              <p className="text-sm text-muted-foreground mt-2">Fresh products</p>
+              <h3 className="font-medium">{category.name}</h3>
+              <p className="text-sm text-muted-foreground mt-2">Premium quality</p>
             </div>
           ))}
         </div>
@@ -113,7 +118,7 @@ const Index: React.FC = () => {
               </div>
               <h3 className="text-lg font-medium">Direct from Farmers</h3>
               <p className="text-muted-foreground">
-                Buy directly from farmers without middlemen, ensuring freshness and fair prices.
+                Buy directly from farmers across India without middlemen, ensuring freshness and fair prices.
               </p>
             </div>
             
@@ -121,9 +126,9 @@ const Index: React.FC = () => {
               <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
                 <Leaf className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="text-lg font-medium">Quality Guaranteed</h3>
+              <h3 className="text-lg font-medium">Authentic Indian Products</h3>
               <p className="text-muted-foreground">
-                All products are verified for quality and authenticity before listing.
+                All products are verified for quality and authenticity, including many GI-tagged specialties.
               </p>
             </div>
             
@@ -131,9 +136,9 @@ const Index: React.FC = () => {
               <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
                 <Leaf className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="text-lg font-medium">Sustainable Practices</h3>
+              <h3 className="text-lg font-medium">Supporting Local Communities</h3>
               <p className="text-muted-foreground">
-                Supporting farmers who follow sustainable and ethical farming practices.
+                Your purchases help sustain agricultural communities and traditional farming practices across India.
               </p>
             </div>
           </div>
