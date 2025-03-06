@@ -27,7 +27,7 @@ const BidForm: React.FC<BidFormProps> = ({ product, onBidSubmit }) => {
       return;
     }
 
-    if (currentUser?.userType !== 'buyer') {
+    if (!currentUser || currentUser.userType !== 'buyer') {
       toast.error("Only buyers can place bids");
       return;
     }

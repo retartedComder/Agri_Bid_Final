@@ -13,7 +13,7 @@ import { Calendar, MapPin, Tag, Truck, Clock, Award, Star } from 'lucide-react';
 const ProductDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { products, selectedProduct, setSelectedProduct, currentUser, isHighestBidder } = useProducts();
+  const { products, selectedProduct, setSelectedProduct, currentUser, isHighestBidder, isAuthenticated } = useProducts();
   
   const [activeTab, setActiveTab] = useState('details');
   
@@ -41,7 +41,8 @@ const ProductDetails: React.FC = () => {
     navigate(`/checkout/${selectedProduct.id}`);
   };
   
-  const isHighest = isHighestBidder(selectedProduct.id, currentUser.id);
+  // Check if the user is the highest bidder, safely handling null currentUser
+  const isHighest = currentUser ? isHighestBidder(selectedProduct.id, currentUser.id) : false;
   const hasBids = selectedProduct.bids && selectedProduct.bids.length > 0;
   
   return (
@@ -99,14 +100,14 @@ const ProductDetails: React.FC = () => {
             </div>
             
             <p className="text-lg font-medium mb-1">
-              Current bid: ${selectedProduct.currentPrice.toFixed(2)}
+              Current bid: ₹{selectedProduct.currentPrice.toFixed(2)}
             </p>
             <p className="text-sm text-muted-foreground mb-6">
-              Started at ${selectedProduct.startingPrice.toFixed(2)}
+              Started at ₹{selectedProduct.startingPrice.toFixed(2)}
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4">
-              {isHighest ? (
+              {isAuthenticated && isHighest ? (
                 <Button 
                   onClick={handleProceedToCheckout}
                   className="button-hover-effect"
@@ -114,7 +115,7 @@ const ProductDetails: React.FC = () => {
                   Proceed to Checkout
                 </Button>
               ) : (
-                hasBids && (
+                isAuthenticated && hasBids && (
                   <Button 
                     variant="outline" 
                     disabled
