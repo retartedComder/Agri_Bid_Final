@@ -12,7 +12,7 @@ interface BidFormProps {
 }
 
 const BidForm: React.FC<BidFormProps> = ({ product, onBidSubmit }) => {
-  const { addBid, getHighestBidForProduct, currentUser } = useProducts();
+  const { addBid, getHighestBidForProduct, currentUser, isAuthenticated, currency } = useProducts();
   const highestBid = getHighestBidForProduct(product.id);
   const minimumBid = Math.max(product.startingPrice, highestBid + 1);
   
@@ -22,8 +22,18 @@ const BidForm: React.FC<BidFormProps> = ({ product, onBidSubmit }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!isAuthenticated) {
+      toast.error("Please login as a buyer to place a bid");
+      return;
+    }
+
+    if (currentUser?.userType !== 'buyer') {
+      toast.error("Only buyers can place bids");
+      return;
+    }
+    
     if (bidAmount < minimumBid) {
-      toast.error(`Bid must be at least $${minimumBid}`);
+      toast.error(`Bid must be at least ${currency}${minimumBid}`);
       return;
     }
     
@@ -45,25 +55,25 @@ const BidForm: React.FC<BidFormProps> = ({ product, onBidSubmit }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 bg-secondary/50 p-6 rounded-lg backdrop-blur-sm animate-fade-in">
+    <form onSubmit={handleSubmit} className="space-y-4 bg-green-50 p-6 rounded-lg backdrop-blur-sm animate-fade-in">
       <div className="space-y-2">
         <div className="flex justify-between text-sm">
           <p className="text-muted-foreground">Current highest bid</p>
-          <p className="font-medium">${highestBid.toFixed(2)}</p>
+          <p className="font-medium">{currency}{highestBid.toFixed(2)}</p>
         </div>
         
         <div className="flex justify-between text-sm">
           <p className="text-muted-foreground">Your minimum bid</p>
-          <p className="font-medium">${minimumBid.toFixed(2)}</p>
+          <p className="font-medium">{currency}{minimumBid.toFixed(2)}</p>
         </div>
       </div>
 
       <div className="flex flex-col space-y-2">
         <label htmlFor="bidAmount" className="text-sm font-medium">
-          Your bid (USD)
+          Your bid
         </label>
         <div className="relative">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">{currency}</span>
           <Input
             id="bidAmount"
             type="number"
@@ -79,10 +89,12 @@ const BidForm: React.FC<BidFormProps> = ({ product, onBidSubmit }) => {
 
       <Button 
         type="submit" 
-        className="w-full button-hover-effect bg-primary hover:bg-primary/90"
-        disabled={isSubmitting}
+        className="w-full button-hover-effect bg-green-600 hover:bg-green-700 text-white"
+        disabled={isSubmitting || !isAuthenticated || (currentUser?.userType !== 'buyer')}
       >
-        {isSubmitting ? "Placing Bid..." : "Place Bid"}
+        {!isAuthenticated ? 'Login to Bid' : 
+         (currentUser?.userType !== 'buyer') ? 'Only Buyers Can Bid' : 
+         (isSubmitting ? "Placing Bid..." : "Place Bid")}
       </Button>
       
       <p className="text-xs text-muted-foreground text-center">

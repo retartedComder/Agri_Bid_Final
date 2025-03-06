@@ -29,6 +29,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  userType: 'farmer' | 'buyer';
   address?: string;
   phone?: string;
 }
@@ -40,3 +41,11 @@ export interface PaymentDetails {
   cvv: string;
   billingAddress: string;
 }
+
+export interface AuthState {
+  isAuthenticated: boolean;
+  currentUser: User | null;
+  isLoading: boolean;
+}
+
+export type Currency = '₹';

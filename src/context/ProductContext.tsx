@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Product, Bid, User } from '@/types';
+import { Product, Bid, User, Currency } from '@/types';
 
 // Sample data
 const sampleProducts: Product[] = [
@@ -65,34 +65,65 @@ const sampleProducts: Product[] = [
   }
 ];
 
-// Sample user
-const sampleUser: User = {
-  id: "user1",
-  name: "John Doe",
-  email: "john@example.com",
-  address: "123 Main St, San Francisco, CA",
-  phone: "555-123-4567"
-};
+// Sample users
+const sampleUsers: User[] = [
+  {
+    id: "user1",
+    name: "John Doe",
+    email: "john@example.com",
+    userType: "buyer",
+    address: "123 Main St, Delhi, India",
+    phone: "555-123-4567"
+  },
+  {
+    id: "user2",
+    name: "Jane Smith",
+    email: "jane@example.com",
+    userType: "farmer",
+    address: "456 Farm Rd, Mumbai, India",
+    phone: "555-987-6543"
+  }
+];
 
 interface ProductContextType {
   products: Product[];
-  currentUser: User;
+  currentUser: User | null;
+  isAuthenticated: boolean;
+  currency: Currency;
   selectedProduct: Product | null;
   setSelectedProduct: (product: Product | null) => void;
   addBid: (productId: string, amount: number) => void;
   getHighestBidForProduct: (productId: string) => number;
   getUserBids: (userId: string) => Bid[];
   isHighestBidder: (productId: string, userId: string) => boolean;
+  login: (email: string, password: string, userType: 'farmer' | 'buyer') => Promise<boolean>;
+  register: (name: string, email: string, password: string, userType: 'farmer' | 'buyer') => Promise<boolean>;
+  logout: () => void;
+  addProduct: (product: Omit<Product, 'id'>) => void;
 }
 
 const ProductContext = createContext<ProductContextType | undefined>(undefined);
 
 export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [products, setProducts] = useState<Product[]>(sampleProducts);
-  const [currentUser] = useState<User>(sampleUser);
+  const [users] = useState<User[]>(sampleUsers);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [currency] = useState<Currency>('₹');
+
+  // Check for stored user on initial load
+  useEffect(() => {
+    const storedUser = localStorage.getItem('currentUser');
+    if (storedUser) {
+      setCurrentUser(JSON.parse(storedUser));
+      setIsAuthenticated(true);
+    }
+  }, []);
 
   const addBid = (productId: string, amount: number) => {
+    if (!currentUser) return;
+
     const newBid: Bid = {
       id: `bid-${Date.now()}`,
       userId: currentUser.id,
@@ -130,6 +161,8 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const isHighestBidder = (productId: string, userId: string): boolean => {
+    if (!userId) return false;
+    
     const product = products.find(p => p.id === productId);
     if (!product || !product.bids || product.bids.length === 0) return false;
     
@@ -137,10 +170,69 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const userHighestBid = Math.max(
       ...product.bids
         .filter(bid => bid.userId === userId)
-        .map(bid => bid.amount)
+        .map(bid => bid.amount),
+      0
     );
     
     return highestBid === userHighestBid;
+  };
+
+  const login = async (email: string, password: string, userType: 'farmer' | 'buyer'): Promise<boolean> => {
+    // Simulate API call
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        const user = users.find(u => u.email === email && u.userType === userType);
+        if (user) {
+          setCurrentUser(user);
+          setIsAuthenticated(true);
+          localStorage.setItem('currentUser', JSON.stringify(user));
+          resolve(true);
+        } else {
+          resolve(false);
+        }
+      }, 800);
+    });
+  };
+
+  const register = async (name: string, email: string, password: string, userType: 'farmer' | 'buyer'): Promise<boolean> => {
+    // Simulate API call
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        const existingUser = users.find(u => u.email === email);
+        if (existingUser) {
+          resolve(false);
+        } else {
+          const newUser: User = {
+            id: `user-${Date.now()}`,
+            name,
+            email,
+            userType
+          };
+          
+          users.push(newUser);
+          setCurrentUser(newUser);
+          setIsAuthenticated(true);
+          localStorage.setItem('currentUser', JSON.stringify(newUser));
+          resolve(true);
+        }
+      }, 800);
+    });
+  };
+
+  const logout = () => {
+    setCurrentUser(null);
+    setIsAuthenticated(false);
+    localStorage.removeItem('currentUser');
+  };
+
+  const addProduct = (product: Omit<Product, 'id'>) => {
+    const newProduct: Product = {
+      ...product,
+      id: `product-${Date.now()}`,
+      bids: []
+    };
+    
+    setProducts(prevProducts => [...prevProducts, newProduct]);
   };
 
   return (
@@ -148,12 +240,18 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
       value={{
         products,
         currentUser,
+        isAuthenticated,
+        currency,
         selectedProduct,
         setSelectedProduct,
         addBid,
         getHighestBidForProduct,
         getUserBids,
-        isHighestBidder
+        isHighestBidder,
+        login,
+        register,
+        logout,
+        addProduct
       }}
     >
       {children}
