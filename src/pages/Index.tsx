@@ -19,7 +19,7 @@ const Index: React.FC = () => {
               From Indian Farms to Your Home
             </div>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold leading-tight">
-              India's Premier <span className="text-gradient">Agricultural Marketplace</span>
+              India's <span className="text-gradient">Agricultural Marketplace</span>
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Discover and bid on premium agricultural products directly from farmers across India. 
@@ -29,9 +29,6 @@ const Index: React.FC = () => {
             <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
               <Button className="button-hover-effect px-6">
                 Browse Products
-              </Button>
-              <Button variant="outline" className="px-6">
-                Learn More
               </Button>
             </div>
           </div>
