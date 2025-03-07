@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProducts } from '@/context/ProductContext';
@@ -16,9 +15,10 @@ import {
   CardFooter 
 } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from 'lucide-react';
+import { Calendar, Clock } from 'lucide-react';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { format, addHours, addDays } from 'date-fns';
+import { format, addHours, addDays, setHours, setMinutes } from 'date-fns';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const AddProduct: React.FC = () => {
   const { addProduct, currentUser, isAuthenticated, currency } = useProducts();
@@ -32,7 +32,15 @@ const AddProduct: React.FC = () => {
   const [category, setCategory] = useState('');
   const [location, setLocation] = useState('');
   const [auctionEndDate, setAuctionEndDate] = useState<Date | undefined>(addDays(new Date(), 7));
+  const [auctionEndHour, setAuctionEndHour] = useState<string>("12");
+  const [auctionEndMinute, setAuctionEndMinute] = useState<string>("00");
+  const [auctionEndAmPm, setAuctionEndAmPm] = useState<string>("PM");
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Generate hours for select
+  const hours = Array.from({ length: 12 }, (_, i) => (i + 1).toString().padStart(2, '0'));
+  // Generate minutes for select
+  const minutes = Array.from({ length: 60 }, (_, i) => i.toString().padStart(2, '0'));
   
   // Redirect if not logged in as a farmer
   React.useEffect(() => {
@@ -41,6 +49,24 @@ const AddProduct: React.FC = () => {
       navigate('/');
     }
   }, [isAuthenticated, currentUser, navigate]);
+
+  const getFinalAuctionEndTime = (): Date | undefined => {
+    if (!auctionEndDate) return undefined;
+    
+    const endDate = new Date(auctionEndDate);
+    let hour = parseInt(auctionEndHour, 10);
+    
+    // Convert to 24-hour format
+    if (auctionEndAmPm === "PM" && hour < 12) {
+      hour += 12;
+    } else if (auctionEndAmPm === "AM" && hour === 12) {
+      hour = 0;
+    }
+    
+    const minute = parseInt(auctionEndMinute, 10);
+    
+    return setMinutes(setHours(endDate, hour), minute);
+  };
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,8 +76,10 @@ const AddProduct: React.FC = () => {
       return;
     }
     
+    const finalEndTime = getFinalAuctionEndTime();
+    
     // Validate auction end date is in the future
-    if (auctionEndDate && auctionEndDate <= new Date()) {
+    if (finalEndTime && finalEndTime <= new Date()) {
       toast.error('Auction end time must be in the future');
       return;
     }
@@ -69,7 +97,7 @@ const AddProduct: React.FC = () => {
         category,
         location,
         seller: currentUser?.name || 'Unknown Seller',
-        auctionEndTime: auctionEndDate,
+        auctionEndTime: finalEndTime,
       });
       
       toast.success('Product added successfully!');
@@ -179,28 +207,69 @@ const AddProduct: React.FC = () => {
                 </div>
               </div>
               
-              <div>
-                <Label htmlFor="auctionEndDate">Auction End Date*</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start text-left font-normal"
-                    >
-                      <Calendar className="mr-2 h-4 w-4" />
-                      {auctionEndDate ? format(auctionEndDate, 'PPP') : <span>Pick a date</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <CalendarComponent
-                      mode="single"
-                      selected={auctionEndDate}
-                      onSelect={setAuctionEndDate}
-                      initialFocus
-                      disabled={(date) => date < new Date()}
-                    />
-                  </PopoverContent>
-                </Popover>
+              <div className="space-y-2">
+                <Label htmlFor="auctionEndDate">Auction End Date & Time*</Label>
+                <div className="flex flex-col space-y-2 md:flex-row md:space-y-0 md:space-x-4">
+                  <div className="flex-1">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="w-full justify-start text-left font-normal"
+                        >
+                          <Calendar className="mr-2 h-4 w-4" />
+                          {auctionEndDate ? format(auctionEndDate, 'PPP') : <span>Pick a date</span>}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0">
+                        <CalendarComponent
+                          mode="single"
+                          selected={auctionEndDate}
+                          onSelect={setAuctionEndDate}
+                          initialFocus
+                          disabled={(date) => date < new Date()}
+                          className="pointer-events-auto"
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  
+                  <div className="flex flex-1 space-x-2 items-center">
+                    <Select value={auctionEndHour} onValueChange={setAuctionEndHour}>
+                      <SelectTrigger className="w-[70px]">
+                        <SelectValue placeholder="Hour" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {hours.map((hour) => (
+                          <SelectItem key={hour} value={hour}>{hour}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    
+                    <span>:</span>
+                    
+                    <Select value={auctionEndMinute} onValueChange={setAuctionEndMinute}>
+                      <SelectTrigger className="w-[70px]">
+                        <SelectValue placeholder="Min" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {minutes.map((minute) => (
+                          <SelectItem key={minute} value={minute}>{minute}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    
+                    <Select value={auctionEndAmPm} onValueChange={setAuctionEndAmPm}>
+                      <SelectTrigger className="w-[70px]">
+                        <SelectValue placeholder="AM/PM" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="AM">AM</SelectItem>
+                        <SelectItem value="PM">PM</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
                 <p className="text-xs text-muted-foreground mt-1">
                   This is when the auction will end. The highest bidder at this time will win.
                 </p>
