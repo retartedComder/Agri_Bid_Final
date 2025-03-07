@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProducts } from '@/context/ProductContext';
@@ -17,7 +18,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar, Clock } from 'lucide-react';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { format, addHours, addDays, setHours, setMinutes } from 'date-fns';
+import { format, addHours, addDays, setHours, setMinutes, isSameDay } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const AddProduct: React.FC = () => {
@@ -108,6 +109,9 @@ const AddProduct: React.FC = () => {
       setIsLoading(false);
     }
   };
+
+  // Current time for validation
+  const now = new Date();
   
   return (
     <div className="container mx-auto py-8 px-4">
@@ -227,7 +231,10 @@ const AddProduct: React.FC = () => {
                           selected={auctionEndDate}
                           onSelect={setAuctionEndDate}
                           initialFocus
-                          disabled={(date) => date < new Date()}
+                          disabled={(date) => {
+                            // Allow today's date, but disable past dates
+                            return date < new Date(now.setHours(0, 0, 0, 0));
+                          }}
                           className="pointer-events-auto"
                         />
                       </PopoverContent>
@@ -271,7 +278,9 @@ const AddProduct: React.FC = () => {
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  This is when the auction will end. The highest bidder at this time will win.
+                  {isSameDay(new Date(), auctionEndDate || new Date()) ? 
+                    "For same-day auctions, ensure the end time is in the future." : 
+                    "This is when the auction will end. The highest bidder at this time will win."}
                 </p>
               </div>
             </div>
