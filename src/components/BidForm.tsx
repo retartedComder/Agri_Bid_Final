@@ -5,6 +5,8 @@ import { toast } from "sonner";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Product } from '@/types';
+import { formatDistanceToNow } from 'date-fns';
+import { Clock } from 'lucide-react';
 
 interface BidFormProps {
   product: Product;
@@ -19,6 +21,9 @@ const BidForm: React.FC<BidFormProps> = ({ product, onBidSubmit }) => {
   const [bidAmount, setBidAmount] = useState<number>(minimumBid);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Check if auction has ended
+  const isAuctionEnded = product.auctionEndTime && new Date() > new Date(product.auctionEndTime);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -29,6 +34,11 @@ const BidForm: React.FC<BidFormProps> = ({ product, onBidSubmit }) => {
 
     if (!currentUser || currentUser.userType !== 'buyer') {
       toast.error("Only buyers can place bids");
+      return;
+    }
+    
+    if (isAuctionEnded) {
+      toast.error("This auction has ended");
       return;
     }
     
@@ -54,8 +64,35 @@ const BidForm: React.FC<BidFormProps> = ({ product, onBidSubmit }) => {
     }, 800);
   };
 
+  // Render auction status
+  const renderAuctionStatus = () => {
+    if (!product.auctionEndTime) return null;
+    
+    const endTime = new Date(product.auctionEndTime);
+    
+    if (isAuctionEnded) {
+      return (
+        <div className="flex items-center gap-2 p-2 mt-2 bg-red-100 text-red-700 rounded-md">
+          <Clock size={16} />
+          <span className="text-sm font-medium">Auction has ended</span>
+        </div>
+      );
+    }
+    
+    return (
+      <div className="flex items-center gap-2 p-2 mt-2 bg-amber-100 text-amber-700 rounded-md">
+        <Clock size={16} />
+        <span className="text-sm font-medium">
+          Ends {formatDistanceToNow(endTime, { addSuffix: true })}
+        </span>
+      </div>
+    );
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4 bg-green-50 p-6 rounded-lg backdrop-blur-sm animate-fade-in">
+      {renderAuctionStatus()}
+      
       <div className="space-y-2">
         <div className="flex justify-between text-sm">
           <p className="text-muted-foreground">Current highest bid</p>
@@ -90,10 +127,11 @@ const BidForm: React.FC<BidFormProps> = ({ product, onBidSubmit }) => {
       <Button 
         type="submit" 
         className="w-full button-hover-effect bg-green-600 hover:bg-green-700 text-white"
-        disabled={isSubmitting || !isAuthenticated || (currentUser?.userType !== 'buyer')}
+        disabled={isSubmitting || !isAuthenticated || (currentUser?.userType !== 'buyer') || isAuctionEnded}
       >
         {!isAuthenticated ? 'Login to Bid' : 
-         (currentUser?.userType !== 'buyer') ? 'Only Buyers Can Bid' : 
+         (currentUser?.userType !== 'buyer') ? 'Only Buyers Can Bid' :
+         isAuctionEnded ? 'Auction Ended' :
          (isSubmitting ? "Placing Bid..." : "Place Bid")}
       </Button>
       

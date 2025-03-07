@@ -8,12 +8,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import BidForm from '@/components/BidForm';
 import BidHistory from '@/components/BidHistory';
-import { Calendar, MapPin, Tag, Truck, Clock, Award, Star } from 'lucide-react';
+import { Calendar, MapPin, Tag, Truck, Clock, Award, Star, Timer } from 'lucide-react';
+import { format, formatDistanceToNow } from 'date-fns';
 
 const ProductDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { products, selectedProduct, setSelectedProduct, currentUser, isHighestBidder, isAuthenticated } = useProducts();
+  const { products, selectedProduct, setSelectedProduct, currentUser, isHighestBidder, isAuthenticated, currency } = useProducts();
   
   const [activeTab, setActiveTab] = useState('details');
   
@@ -37,6 +38,9 @@ const ProductDetails: React.FC = () => {
     );
   }
   
+  // Check if auction has ended
+  const isAuctionEnded = selectedProduct.auctionEndTime && new Date() > new Date(selectedProduct.auctionEndTime);
+  
   const handleProceedToCheckout = () => {
     navigate(`/checkout/${selectedProduct.id}`);
   };
@@ -44,6 +48,30 @@ const ProductDetails: React.FC = () => {
   // Check if the user is the highest bidder, safely handling null currentUser
   const isHighest = currentUser ? isHighestBidder(selectedProduct.id, currentUser.id) : false;
   const hasBids = selectedProduct.bids && selectedProduct.bids.length > 0;
+  
+  // Get auction status
+  const getAuctionStatus = () => {
+    if (!selectedProduct.auctionEndTime) return null;
+    
+    const endTime = new Date(selectedProduct.auctionEndTime);
+    const now = new Date();
+    
+    if (endTime < now) {
+      return (
+        <Badge variant="destructive" className="flex items-center gap-1">
+          <Clock className="h-3 w-3" />
+          Auction Ended
+        </Badge>
+      );
+    }
+    
+    return (
+      <Badge variant="secondary" className="flex items-center gap-1">
+        <Timer className="h-3 w-3" />
+        Ends {formatDistanceToNow(endTime, { addSuffix: true })}
+      </Badge>
+    );
+  };
   
   return (
     <div className="container mx-auto py-8 px-4 max-w-6xl animate-fade-in">
@@ -82,6 +110,7 @@ const ProductDetails: React.FC = () => {
                 {selectedProduct.category}
               </Badge>
               <p className="text-sm text-muted-foreground">{selectedProduct.seller}</p>
+              {getAuctionStatus()}
             </div>
             
             <h1 className="text-3xl font-display font-bold mb-3">{selectedProduct.name}</h1>
@@ -100,14 +129,14 @@ const ProductDetails: React.FC = () => {
             </div>
             
             <p className="text-lg font-medium mb-1">
-              Current bid: ₹{selectedProduct.currentPrice.toFixed(2)}
+              Current bid: {currency}{selectedProduct.currentPrice.toFixed(2)}
             </p>
             <p className="text-sm text-muted-foreground mb-6">
-              Started at ₹{selectedProduct.startingPrice.toFixed(2)}
+              Started at {currency}{selectedProduct.startingPrice.toFixed(2)}
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4">
-              {isAuthenticated && isHighest ? (
+              {isAuthenticated && isHighest && isAuctionEnded ? (
                 <Button 
                   onClick={handleProceedToCheckout}
                   className="button-hover-effect"
@@ -126,6 +155,21 @@ const ProductDetails: React.FC = () => {
                 )
               )}
             </div>
+            
+            {selectedProduct.auctionEndTime && (
+              <div className="mt-4 p-3 bg-secondary/50 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-5 w-5 text-primary" />
+                  <div>
+                    <p className="text-sm font-medium">Auction {isAuctionEnded ? 'Ended' : 'Ends'}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {format(new Date(selectedProduct.auctionEndTime), 'PPP p')}
+                      {!isAuctionEnded && ` (${formatDistanceToNow(new Date(selectedProduct.auctionEndTime), { addSuffix: true })})`}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
           
           <Separator />

@@ -1,4 +1,3 @@
-
 export interface Product {
   id: string;
   name: string;
@@ -14,6 +13,7 @@ export interface Product {
   expiryDate?: string;
   certifications?: string[];
   bids?: Bid[];
+  auctionEndTime?: Date; // Added auction end time
 }
 
 export interface Bid {

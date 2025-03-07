@@ -15,6 +15,10 @@ import {
   CardDescription, 
   CardFooter 
 } from '@/components/ui/card';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from 'lucide-react';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { format, addHours, addDays } from 'date-fns';
 
 const AddProduct: React.FC = () => {
   const { addProduct, currentUser, isAuthenticated, currency } = useProducts();
@@ -27,6 +31,7 @@ const AddProduct: React.FC = () => {
   const [quantity, setQuantity] = useState<number>(1);
   const [category, setCategory] = useState('');
   const [location, setLocation] = useState('');
+  const [auctionEndDate, setAuctionEndDate] = useState<Date | undefined>(addDays(new Date(), 7));
   const [isLoading, setIsLoading] = useState(false);
   
   // Redirect if not logged in as a farmer
@@ -40,8 +45,14 @@ const AddProduct: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!name || !description || !imageUrl || !startingPrice || !quantity || !category || !location) {
+    if (!name || !description || !imageUrl || !startingPrice || !quantity || !category || !location || !auctionEndDate) {
       toast.error('Please fill in all required fields');
+      return;
+    }
+    
+    // Validate auction end date is in the future
+    if (auctionEndDate && auctionEndDate <= new Date()) {
+      toast.error('Auction end time must be in the future');
       return;
     }
     
@@ -58,6 +69,7 @@ const AddProduct: React.FC = () => {
         category,
         location,
         seller: currentUser?.name || 'Unknown Seller',
+        auctionEndTime: auctionEndDate,
       });
       
       toast.success('Product added successfully!');
@@ -165,6 +177,33 @@ const AddProduct: React.FC = () => {
                     required
                   />
                 </div>
+              </div>
+              
+              <div>
+                <Label htmlFor="auctionEndDate">Auction End Date*</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start text-left font-normal"
+                    >
+                      <Calendar className="mr-2 h-4 w-4" />
+                      {auctionEndDate ? format(auctionEndDate, 'PPP') : <span>Pick a date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <CalendarComponent
+                      mode="single"
+                      selected={auctionEndDate}
+                      onSelect={setAuctionEndDate}
+                      initialFocus
+                      disabled={(date) => date < new Date()}
+                    />
+                  </PopoverContent>
+                </Popover>
+                <p className="text-xs text-muted-foreground mt-1">
+                  This is when the auction will end. The highest bidder at this time will win.
+                </p>
               </div>
             </div>
             

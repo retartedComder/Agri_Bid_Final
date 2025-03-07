@@ -1,8 +1,8 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Product, Bid, User, Currency } from '@/types';
+import { addDays } from 'date-fns';
 
-// Sample data with Indian context
+// Sample data with Indian context and auction end times
 const sampleProducts: Product[] = [
   {
     id: "1",
@@ -18,7 +18,8 @@ const sampleProducts: Product[] = [
     harvestDate: "2023-10-01",
     expiryDate: "2024-10-01",
     certifications: ["Organic", "Non-GMO"],
-    bids: []
+    bids: [],
+    auctionEndTime: addDays(new Date(), 7)
   },
   {
     id: "2",
@@ -32,7 +33,8 @@ const sampleProducts: Product[] = [
     quantity: 50,
     category: "Fruits",
     harvestDate: "2023-05-15",
-    bids: []
+    bids: [],
+    auctionEndTime: addDays(new Date(), 5)
   },
   {
     id: "3",
@@ -47,7 +49,8 @@ const sampleProducts: Product[] = [
     category: "Tea",
     harvestDate: "2023-03-10",
     certifications: ["Organic", "Fair Trade"],
-    bids: []
+    bids: [],
+    auctionEndTime: addDays(new Date(), 3)
   },
   {
     id: "4",
@@ -140,7 +143,6 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [currency] = useState<Currency>('₹');
 
-  // Check for stored user on initial load
   useEffect(() => {
     const storedUser = localStorage.getItem('currentUser');
     if (storedUser) {
@@ -151,6 +153,11 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const addBid = (productId: string, amount: number) => {
     if (!currentUser) return;
+
+    const product = products.find(p => p.id === productId);
+    if (product?.auctionEndTime && new Date() > new Date(product.auctionEndTime)) {
+      return;
+    }
 
     const newBid: Bid = {
       id: `bid-${Date.now()}`,
@@ -194,19 +201,24 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const product = products.find(p => p.id === productId);
     if (!product || !product.bids || product.bids.length === 0) return false;
     
-    const highestBid = Math.max(...product.bids.map(bid => bid.amount));
-    const userHighestBid = Math.max(
-      ...product.bids
-        .filter(bid => bid.userId === userId)
-        .map(bid => bid.amount),
-      0
-    );
+    const isAuctionEnded = product.auctionEndTime && new Date() > new Date(product.auctionEndTime);
     
-    return highestBid === userHighestBid;
+    if (isAuctionEnded) {
+      const highestBid = Math.max(...product.bids.map(bid => bid.amount));
+      const userHighestBid = Math.max(
+        ...product.bids
+          .filter(bid => bid.userId === userId)
+          .map(bid => bid.amount),
+        0
+      );
+      
+      return highestBid === userHighestBid;
+    }
+    
+    return false;
   };
 
   const login = async (email: string, password: string, userType: 'farmer' | 'buyer'): Promise<boolean> => {
-    // Simulate API call
     return new Promise((resolve) => {
       setTimeout(() => {
         const user = users.find(u => u.email === email && u.userType === userType);
@@ -223,7 +235,6 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const register = async (name: string, email: string, password: string, userType: 'farmer' | 'buyer'): Promise<boolean> => {
-    // Simulate API call
     return new Promise((resolve) => {
       setTimeout(() => {
         const existingUser = users.find(u => u.email === email);
